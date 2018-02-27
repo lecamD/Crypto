@@ -23,7 +23,6 @@ void euclide(mpz_t a, mpz_t p, mpz_t u, mpz_t v) {
      * v0 prend la valeur 0
      * v1 prend la valeur 1
      */
-    
     mpz_set(r0,a);
     mpz_set(r1,p);
     mpz_set_d(u0,1);
@@ -34,6 +33,7 @@ void euclide(mpz_t a, mpz_t p, mpz_t u, mpz_t v) {
     /* q est le quotient
      * r est le reste
      */
+    
     mpz_fdiv_qr( q, r, r0, r1 );
     /* u = u0 - q*u1
      * v = v0 - q*v1
@@ -65,8 +65,8 @@ void euclide(mpz_t a, mpz_t p, mpz_t u, mpz_t v) {
      * q et r sont recalculés à partir des nouvelles valeurs de r0 et r1
      * u et v sont recalculés à partir des nouvelles valeurs de de q,u0,v0,u1,v1
      */
-    while (mpz_cmp_d(r,1)!=0) {
-        
+
+    while (mpz_cmp_d(r,1)>1) {
         mpz_set(r0,r1);
         mpz_set(r1,r);
         mpz_set(u0,u1);
@@ -151,31 +151,65 @@ void expMod(mpz_t res,mpz_t p,mpz_t g,mpz_t a) {
     mpz_clear(un);
 }
 
+
+void keyGen(mpz_t p, mpz_t g, mpz_t x, mpz_t X) {
+//     initialisation pour l'aléatore
+    gmp_randstate_t state;
+    gmp_randinit_default (state);
+    gmp_randseed_ui (state, (unsigned) time(NULL));
+//     Tire au hasard un x
+    mpz_urandomb(x,state,1024);
+//     Calcul X = g^x mod p
+    expMod(X, p, g, x);
+}
+
+void encrypt(mpz_t C, mpz_t B, mpz_t p, mpz_t g, mpz_t X, mpz_t m) {
+    
+}
+
+void decrypt(mpz_t C, mpz_t B,mpz_t x,mpz_t m) {
+    
+}
+
+
+
 int main( int argc, char ** argv ) {
 //     initialisation de p = 2^1024 − 2^960 − 1 + 2^64 ∗ ([2^894 π] + 129093) et g = 2
-    printf("Début\n");
     mpz_t k,b,c,d,p,q,un,g,deux,truc,cent;
-    mpz_init(k);mpz_init(b);mpz_init(c);mpz_init(d);mpz_init(q);mpz_init(un);mpz_init(deux);mpz_init(truc);
+    mpz_init(k);mpz_init(b);mpz_init(c);mpz_init(d);mpz_init(q);mpz_init(un);mpz_init(deux);mpz_init(truc);mpz_init(cent);
     mpz_init(g);mpz_init(p);
     mpz_set_d(un,1);
     mpz_set_d(deux,2);
-    mpz_set_d(truc,129093);
+    mpz_set_d(truc,129093); 
     mpz_set_d(cent,100);
+    
+//     2^1024
     mpz_pow_ui(k,deux,1024);
+//     2^960
     mpz_pow_ui(b,deux,960);
+//     2^64
     mpz_pow_ui(c,deux,64);
+//     2^894
     mpz_pow_ui(d,deux,894);
+//     2^1024 − 2^960
     mpz_sub(p,k,b);
+//    (2^1024 − 2^960) - 1
     mpz_sub(p,p,un);
+//     (2^1024 − 2^960 − 1) + 2^64
     mpz_add(p,p,c);
+//     2^894 * 314
     mpz_mul_ui(q,d,314);
+//     (2^894 * 314) / 100
     mpz_fdiv_q(q,q,cent);
+//     (2^894 * π) + 129093
     mpz_add(q,q,truc);
+//     (2^1024 − 2^960 − 1 + 2^64) ∗ ([2^894 π] + 129093)
     mpz_mul(p,p,q);
-    mpz_clear(k);mpz_clear(b);mpz_clear(c);mpz_clear(d);mpz_clear(q);mpz_clear(un);mpz_clear(deux);mpz_clear(truc);mpz_clear(cent);
     
-//    p =  71228358885591856050241100699596933797749444737096820488669463286278902661280697282971911001517504341008750531257379773885548235842558723535787181661606006843431826328491853360204215072829799533252489348561103198617185518228891409479725352437987141306688729610261562183980157186100459243899036299752163983796414855184335667002546913446101846404152238551724954541389435423765607694670024470763149811220322435508819662740116827972074966387939637164374766006570050958200378089615407912230233410217787084282090069716680163650249061455999871035153344209929209579535931659366923372475
+//    p =  74552348966919475999252352065578124041644418824828005444807371572971918118807129822843933514921654543589158889382724163333540486848544797300790583472480953829458644890488139850347078442895190178137605518160621347885987509079573008588779202218426541234334203658740434002771140502224523168013812274864773843243435524417268618512771558980788120310982900822695893919136238191653865219655852574475844837862711973004021255940937431491801716342376266668110205626780626493974387752884772478512132126093497864917801347061932974000514178185105720025718058922503179907990813359665487929030
+
     
+        
     mpz_set_d(g,2);
     
 //     initialisation pour l'aléatore
@@ -188,8 +222,9 @@ int main( int argc, char ** argv ) {
     mpz_init(a);
     mpz_init(u);
     mpz_init(v);
-//     Deux nombre aléatoire pour a
-    mpz_urandomb(a,state,1024);
+//     Nombre aléatoire pour a entre 0 et p-2
+    mpz_sub(k,p,un);
+    mpz_urandomm(a,state,k);
     
 //     mpz_set_d(a,81);
 //     mpz_set_d(p,11);
@@ -197,24 +232,18 @@ int main( int argc, char ** argv ) {
     gmp_printf("u = %Zd\nv = %Zd\n",u,v);
     
 //     Test de la fonction expMod()
-    mpz_t res,aa;
+    mpz_t res;
     mpz_init(res);
-    mpz_init(aa);
-    
-    mpz_urandomb(aa,state,1024);
+//     Nombre aléatoire pour a   
+    mpz_sub(k,p,un);
+    mpz_urandomm(a,state,k);
 //     mpz_set_d(pp,12349);
 //     mpz_set_d(aa,34567);
-    gmp_printf("\nOn a  : %Zd\n\n%Zd\n\n%Zd \n\n%Zd\n",g,aa,res,p);
-    expMod(res,p,g,aa);
-    gmp_printf("%Zd^%Zd = %Zd mod %Zd\n",g,aa,res,p);
+    gmp_printf("\nOn a  : %Zd\n\n%Zd\n\n%Zd \n\n%Zd\n",g,a,res,p);
+    expMod(res,p,g,a);
+    gmp_printf("%Zd^%Zd = %Zd mod %Zd\n",g,a,res,p);
     
     
 //     Libère la mémoire
-    mpz_clear(a);
-    mpz_clear(p);
-    mpz_clear(u);
-    mpz_clear(v);
-    mpz_clear(res);
-    mpz_clear(g);
-    mpz_clear(aa);
+    mpz_clear(a);mpz_clear(p);mpz_clear(u);mpz_clear(v);mpz_clear(res);mpz_clear(g);mpz_clear(k);mpz_clear(un);mpz_clear(b);mpz_clear(c);mpz_clear(d);mpz_clear(q);mpz_clear(deux);mpz_clear(truc);mpz_clear(cent);
 }
