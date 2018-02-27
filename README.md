@@ -12,4 +12,6 @@ Question 2 :
 
 
 
-Mise en place des grands nombres mais ça plante ... trop de mémoire utilisées ...
+A l'air de fonctionner sur le petits nombres.
+Trop de mémoire utilisées pour les grands nombre.
+Aléatoire utilisé n'est pas correct ...

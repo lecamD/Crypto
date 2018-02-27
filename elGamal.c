@@ -66,7 +66,7 @@ void euclide(mpz_t a, mpz_t p, mpz_t u, mpz_t v) {
      * u et v sont recalculés à partir des nouvelles valeurs de de q,u0,v0,u1,v1
      */
 
-    while (mpz_cmp_d(r,1)>1) {
+    while (mpz_cmp_d(r,1)>0) {
         mpz_set(r0,r1);
         mpz_set(r1,r);
         mpz_set(u0,u1);
@@ -98,8 +98,6 @@ void euclide(mpz_t a, mpz_t p, mpz_t u, mpz_t v) {
 
 // A = g^a mod p
 void expMod(mpz_t res,mpz_t p,mpz_t g,mpz_t a) {
-//     printf("Nouvelle boucle\n");
-//     gmp_printf("a = %Zd\n",a);
 //         On applique le modulo après chaque calcul
     mpz_t mod2,gg,aa,un,deux;
 //     initialisation des variables 
@@ -116,33 +114,37 @@ void expMod(mpz_t res,mpz_t p,mpz_t g,mpz_t a) {
         mpz_mod(gg,g,p);
         mpz_set(res,gg);
     }
+    else {
 //     Si a est pair le résultat est expMod(res,p,g²,a/2)
-    mpz_mod(mod2,a,mod2);
-    if (mpz_cmp_d(mod2,0)==0) {
-//         g²
-        mpz_mul(gg,g,g);
+        mpz_mod(mod2,a,mod2);
+        if (mpz_cmp_d(mod2,0)==0) {
+//            g²
+            mpz_mul(gg,g,g);
 //         a/2
-        mpz_fdiv_q(aa,a,deux);
+            mpz_fdiv_q(aa,a,deux);
 //         Appel récursif
-        expMod(res,p,gg,aa);
-        mpz_mod(res,res,p);
-    } 
+            expMod(res,p,gg,aa);
+            mpz_mod(res,res,p);
+        } 
 //     Si a > 2 est impair le résultat est g*expMod(res,p,g²,(a-1)/2)
-    else if (mpz_cmp_d(a,2)>0) {
+        else { 
+            if (mpz_cmp_d(a,2)>0) {
 //         g²
-        mpz_mul(gg,g,g);
+                mpz_mul(gg,g,g);
 //         a-1
-        mpz_sub(aa,a,un);
+                mpz_sub(aa,a,un);
 //         (a-1)/2
-        mpz_fdiv_q(aa,aa,deux);
+                mpz_fdiv_q(aa,aa,deux);
 //         Appel récursif
-        expMod(res,p,gg,aa);
-        mpz_mod(res,res,p);
+                expMod(res,p,gg,aa);
+                mpz_mod(res,res,p);
 //         g*expMod(...)
-        mpz_mul(res,g,res);
-        mpz_mod(res,res,p);
-    }
+                mpz_mul(res,g,res);
+                mpz_mod(res,res,p);
+            }
+        }
     
+    }
 //     Libère la mémoire
     mpz_clear(mod2);
     mpz_clear(gg);
@@ -153,27 +155,77 @@ void expMod(mpz_t res,mpz_t p,mpz_t g,mpz_t a) {
 
 
 void keyGen(mpz_t p, mpz_t g, mpz_t x, mpz_t X) {
+    printf("Génération de clé commencée\n");
+    mpz_t un,k;
+    mpz_init(un);
+    mpz_init(k);
+    mpz_set_d(un,1);
 //     initialisation pour l'aléatore
     gmp_randstate_t state;
     gmp_randinit_default (state);
     gmp_randseed_ui (state, (unsigned) time(NULL));
-//     Tire au hasard un x
-    mpz_urandomb(x,state,1024);
+//     Tire au hasard un x entre 0 et p-2
+    mpz_sub(k,p,un);
+    mpz_urandomm(x,state,k);
 //     Calcul X = g^x mod p
     expMod(X, p, g, x);
 }
 
 void encrypt(mpz_t C, mpz_t B, mpz_t p, mpz_t g, mpz_t X, mpz_t m) {
+    printf("encrypt commencé\n");
     
+    mpz_t un,r,k,y;
+    mpz_init(un);
+    mpz_init(k);
+    mpz_init(r);
+    mpz_init(y);
+    mpz_set_d(un,1);
+    
+//     initialisation pour l'aléatore
+    gmp_randstate_t state;
+    gmp_randinit_default (state);
+    gmp_randseed_ui (state, (unsigned) time(NULL));
+    
+//     Tire au hasard un nombre r entre 0 et p-2
+    mpz_sub(k,p,un);
+    mpz_urandomm(r,state,k);
+    mpz_urandomm(r,state,k);
+//     gmp_printf("    r = %Zd\n",r);
+//     Calcul y = X^r mod p
+    expMod(y, p, X, r);
+//     gmp_printf("    y = %Zd\n",y);
+    
+//     C = m * y mod p
+    mpz_mul(C,m,y);
+    mpz_mod(C,C,p);
+    
+//     B = g^r mod p
+    expMod(B,p,g,r);
 }
 
-void decrypt(mpz_t C, mpz_t B,mpz_t x,mpz_t m) {
+void decrypt(mpz_t C, mpz_t B,mpz_t x,mpz_t m, mpz_t p) {
+    printf("decrypt commencé\n");
+    mpz_t D,u,v,t;
+    mpz_init(D);
+    mpz_init(u);
+    mpz_init(v);
+//     D = B^x mod p
+    expMod(D,p,B,x);
+//     gmp_printf("    D = %Zd\n",D);
+//     u = (D)^-1
+    euclide(D, p, u, v);
+//     gmp_printf("    u = %Zd\n   v = %Zd\n",u,v);
+//     C * (D)^-1 mod p
+    mpz_mul(m,C,u);
+    mpz_mod(m,m,p);
     
+    mpz_clear(D);mpz_clear(u);mpz_clear(v);
 }
 
 
 
 int main( int argc, char ** argv ) {
+       
 //     initialisation de p = 2^1024 − 2^960 − 1 + 2^64 ∗ ([2^894 π] + 129093) et g = 2
     mpz_t k,b,c,d,p,q,un,g,deux,truc,cent;
     mpz_init(k);mpz_init(b);mpz_init(c);mpz_init(d);mpz_init(q);mpz_init(un);mpz_init(deux);mpz_init(truc);mpz_init(cent);
@@ -205,45 +257,68 @@ int main( int argc, char ** argv ) {
     mpz_add(q,q,truc);
 //     (2^1024 − 2^960 − 1 + 2^64) ∗ ([2^894 π] + 129093)
     mpz_mul(p,p,q);
-    
-//    p =  74552348966919475999252352065578124041644418824828005444807371572971918118807129822843933514921654543589158889382724163333540486848544797300790583472480953829458644890488139850347078442895190178137605518160621347885987509079573008588779202218426541234334203658740434002771140502224523168013812274864773843243435524417268618512771558980788120310982900822695893919136238191653865219655852574475844837862711973004021255940937431491801716342376266668110205626780626493974387752884772478512132126093497864917801347061932974000514178185105720025718058922503179907990813359665487929030
-
-    
-        
+//     
+// //    p =  74552348966919475999252352065578124041644418824828005444807371572971918118807129822843933514921654543589158889382724163333540486848544797300790583472480953829458644890488139850347078442895190178137605518160621347885987509079573008588779202218426541234334203658740434002771140502224523168013812274864773843243435524417268618512771558980788120310982900822695893919136238191653865219655852574475844837862711973004021255940937431491801716342376266668110205626780626493974387752884772478512132126093497864917801347061932974000514178185105720025718058922503179907990813359665487929030
+// // 
+//     
+//         
     mpz_set_d(g,2);
+    mpz_set_d(p,17);
     
-//     initialisation pour l'aléatore
-    gmp_randstate_t state;
-    gmp_randinit_default (state);
-    gmp_randseed_ui (state, (unsigned) time(NULL));
+//     message à crypter 
+    mpz_t m;
     
-//     Test de la fonction euclide()
-    mpz_t a,u,v;
-    mpz_init(a);
-    mpz_init(u);
-    mpz_init(v);
-//     Nombre aléatoire pour a entre 0 et p-2
-    mpz_sub(k,p,un);
-    mpz_urandomm(a,state,k);
+    mpz_init(m);
+    mpz_set_d(m,16);
+    mpz_mod(m,m,p);
     
-//     mpz_set_d(a,81);
-//     mpz_set_d(p,11);
-    euclide(a,p,u,v);
-    gmp_printf("u = %Zd\nv = %Zd\n",u,v);
+    mpz_t C,B,x,X;
+    mpz_init(C);mpz_init(B);mpz_init(x);mpz_init(X);
     
-//     Test de la fonction expMod()
-    mpz_t res;
-    mpz_init(res);
-//     Nombre aléatoire pour a   
-    mpz_sub(k,p,un);
-    mpz_urandomm(a,state,k);
-//     mpz_set_d(pp,12349);
-//     mpz_set_d(aa,34567);
-    gmp_printf("\nOn a  : %Zd\n\n%Zd\n\n%Zd \n\n%Zd\n",g,a,res,p);
-    expMod(res,p,g,a);
-    gmp_printf("%Zd^%Zd = %Zd mod %Zd\n",g,a,res,p);
+    keyGen(p, g, x, X) ;
+    gmp_printf("Clé secrète :\n    x = %Zd\nClé publique :\n   p = %Zd\n   g = %Zd\n   X = %Zd\n",x,p,g,X); 
+    encrypt(C, B, p, g, X, m) ;
+    gmp_printf("    m = %Zd\n   C = %Zd\n   B = %Zd\n",m,C,B);
+    decrypt(C, B, x, m, p) ;
+    gmp_printf("    m = %Zd\n",m);
+    
+    mpz_clear(m);mpz_clear(k);mpz_clear(un);mpz_clear(b);mpz_clear(c);mpz_clear(d);mpz_clear(q);mpz_clear(deux);mpz_clear(truc);mpz_clear(cent);mpz_clear(C);mpz_clear(B);mpz_clear(x);mpz_clear(X);
     
     
-//     Libère la mémoire
-    mpz_clear(a);mpz_clear(p);mpz_clear(u);mpz_clear(v);mpz_clear(res);mpz_clear(g);mpz_clear(k);mpz_clear(un);mpz_clear(b);mpz_clear(c);mpz_clear(d);mpz_clear(q);mpz_clear(deux);mpz_clear(truc);mpz_clear(cent);
+// //     initialisation pour l'aléatore
+//     gmp_randstate_t state;
+//     gmp_randinit_default (state);
+//     gmp_randseed_ui (state, (unsigned) time(NULL));
+//     
+// //     Test de la fonction euclide()
+//     mpz_t a,u,v;
+//     mpz_init(a);
+//     mpz_init(u);
+//     mpz_init(v);
+// //     Nombre aléatoire pour a entre 0 et p-2
+//     mpz_sub(k,p,un);
+//     mpz_urandomm(a,state,k);
+//     
+// //  exepmle de a   58385680693768810238380287528685100296233131714792073456850403050075397815897728818807088103404954059082733617986301435015160312304388214005626050530026332110186115316871324599019483054579210017428013995557864653757846361168929790664563254257160211361773389720914398534392184220441298211067009384562920135938629228327187303229555959482212725808962064222782349005218675070737360976503677616786764499608188388314645904364358562026122925888811055936754481145999452453860101746416282891831569700742557020597027813182997849854474665077804195029871000075428736954215122065809464607874
+//     
+// //     mpz_set_d(a,81);
+// //     mpz_set_d(p,11);
+//     euclide(a,p,u,v);
+//     gmp_printf("u = %Zd\nv = %Zd\n",u,v);
+//     
+// //     Test de la fonction expMod()
+//     mpz_t res;
+//     mpz_init(res);
+// //     Nombre aléatoire pour a   
+//     mpz_sub(k,p,un);
+//     mpz_urandomm(a,state,k);
+// //     mpz_set_d(pp,12349);
+// //     mpz_set_d(aa,34567);
+//     gmp_printf("\nOn a  : %Zd\n\n%Zd\n\n%Zd \n\n%Zd\n",g,a,res,p);
+//     expMod(res,p,g,a);
+//     gmp_printf("%Zd^%Zd = %Zd mod %Zd\n",g,a,res,p);
+//     
+//     
+// //     Libère la mémoire
+//     mpz_clear(a);mpz_clear(p);mpz_clear(u);mpz_clear(v);mpz_clear(res);mpz_clear(g);
 }
