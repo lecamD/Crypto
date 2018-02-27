@@ -3,6 +3,7 @@
 #include <string.h>
 #include "gmp.h"
 
+
 // La fonction euclide prend en paramètre a et p et renvoie u et v de façon à ce que a*u + p*v = 1
 void euclide(mpz_t a, mpz_t p, mpz_t u, mpz_t v) {
     // déclaration de variables 
@@ -29,13 +30,11 @@ void euclide(mpz_t a, mpz_t p, mpz_t u, mpz_t v) {
     mpz_set_d(u1,0);
     mpz_set_d(v0,0);
     mpz_set_d(v1,1);
-    
     // Première itération r0 = q*r1 + r
     /* q est le quotient
      * r est le reste
      */
     mpz_fdiv_qr( q, r, r0, r1 );
-    
     /* u = u0 - q*u1
      * v = v0 - q*v1
      */
@@ -51,7 +50,7 @@ void euclide(mpz_t a, mpz_t p, mpz_t u, mpz_t v) {
      */
     mpz_sub(u,u0,tmp0);
     mpz_sub(v,v0,tmp1);
-    
+
     
     // mpz_cmp_d(a,b) renvoie 0 si a=b, >0 si a>b, <0 si a<b
     // On boucle tant que le reste est différent de 0
@@ -79,10 +78,12 @@ void euclide(mpz_t a, mpz_t p, mpz_t u, mpz_t v) {
     
         mpz_mul(tmp0,q,u1);
         mpz_mul(tmp1,q,v1);
-    
+        
+
         mpz_sub(u,u0,tmp0);
         mpz_sub(v,v0,tmp1);
     }
+
     
 //     gmp_printf("q : %Zd, r : %Zd\n",q,r);
 
@@ -151,35 +152,61 @@ void expMod(mpz_t res,mpz_t p,mpz_t g,mpz_t a) {
 }
 
 int main( int argc, char ** argv ) {
+//     initialisation de p = 2^1024 − 2^960 − 1 + 2^64 ∗ ([2^894 π] + 129093) et g = 2
+    printf("Début\n");
+    mpz_t k,b,c,d,p,q,un,g,deux,truc,cent;
+    mpz_init(k);mpz_init(b);mpz_init(c);mpz_init(d);mpz_init(q);mpz_init(un);mpz_init(deux);mpz_init(truc);
+    mpz_init(g);mpz_init(p);
+    mpz_set_d(un,1);
+    mpz_set_d(deux,2);
+    mpz_set_d(truc,129093);
+    mpz_set_d(cent,100);
+    mpz_pow_ui(k,deux,1024);
+    mpz_pow_ui(b,deux,960);
+    mpz_pow_ui(c,deux,64);
+    mpz_pow_ui(d,deux,894);
+    mpz_sub(p,k,b);
+    mpz_sub(p,p,un);
+    mpz_add(p,p,c);
+    mpz_mul_ui(q,d,314);
+    mpz_fdiv_q(q,q,cent);
+    mpz_add(q,q,truc);
+    mpz_mul(p,p,q);
+    mpz_clear(k);mpz_clear(b);mpz_clear(c);mpz_clear(d);mpz_clear(q);mpz_clear(un);mpz_clear(deux);mpz_clear(truc);mpz_clear(cent);
+    
+//    p =  71228358885591856050241100699596933797749444737096820488669463286278902661280697282971911001517504341008750531257379773885548235842558723535787181661606006843431826328491853360204215072829799533252489348561103198617185518228891409479725352437987141306688729610261562183980157186100459243899036299752163983796414855184335667002546913446101846404152238551724954541389435423765607694670024470763149811220322435508819662740116827972074966387939637164374766006570050958200378089615407912230233410217787084282090069716680163650249061455999871035153344209929209579535931659366923372475
+    
+    mpz_set_d(g,2);
+    
+//     initialisation pour l'aléatore
+    gmp_randstate_t state;
+    gmp_randinit_default (state);
+    gmp_randseed_ui (state, (unsigned) time(NULL));
     
 //     Test de la fonction euclide()
-    
-    mpz_t a,p,u,v;
+    mpz_t a,u,v;
     mpz_init(a);
-    mpz_init(p);
     mpz_init(u);
     mpz_init(v);
+//     Deux nombre aléatoire pour a
+    mpz_urandomb(a,state,1024);
     
-    mpz_set_d(a,81);
-    mpz_set_d(p,11);
-    
+//     mpz_set_d(a,81);
+//     mpz_set_d(p,11);
     euclide(a,p,u,v);
-    
-    gmp_printf("%Zd*(%Zd) + %Zd*(%Zd) = 1\n",a,u,p,v);
+    gmp_printf("u = %Zd\nv = %Zd\n",u,v);
     
 //     Test de la fonction expMod()
-    mpz_t res,pp,gg,aa;
+    mpz_t res,aa;
     mpz_init(res);
-    mpz_init(pp);
-    mpz_init(gg);
     mpz_init(aa);
     
-    mpz_set_d(pp,12349);
-    mpz_set_d(gg,2);
-    mpz_set_d(aa,34567);
-    
-    expMod(res,pp,gg,aa);
-    gmp_printf("%Zd^%Zd = %Zd mod %Zd\n",gg,aa,res,pp);
+    mpz_urandomb(aa,state,1024);
+//     mpz_set_d(pp,12349);
+//     mpz_set_d(aa,34567);
+    gmp_printf("\nOn a  : %Zd\n\n%Zd\n\n%Zd \n\n%Zd\n",g,aa,res,p);
+    expMod(res,p,g,aa);
+    gmp_printf("%Zd^%Zd = %Zd mod %Zd\n",g,aa,res,p);
     
     
 //     Libère la mémoire
@@ -188,7 +215,6 @@ int main( int argc, char ** argv ) {
     mpz_clear(u);
     mpz_clear(v);
     mpz_clear(res);
-    mpz_clear(pp);
-    mpz_clear(gg);
+    mpz_clear(g);
     mpz_clear(aa);
 }
