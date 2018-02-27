@@ -9,3 +9,7 @@ Question 1 :
 Question 2 :
     ??
     
+
+
+
+Mise en place des grands nombres mais ça plante ... trop de mémoire utilisées ...
