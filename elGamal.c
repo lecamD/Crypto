@@ -190,7 +190,7 @@ void encrypt(mpz_t C, mpz_t B, mpz_t p, mpz_t g, mpz_t X, mpz_t m) {
     mpz_sub(k,p,un);
     mpz_urandomm(r,state,k);
     mpz_urandomm(r,state,k);
-//     gmp_printf("    r = %Zd\n",r);
+    gmp_printf("    r = %Zd\n",r);
 //     Calcul y = X^r mod p
     expMod(y, p, X, r);
 //     gmp_printf("    y = %Zd\n",y);
@@ -263,28 +263,62 @@ int main( int argc, char ** argv ) {
 //     
 //         
     mpz_set_d(g,2);
-    mpz_set_d(p,17);
+    
+//     p pour les tests
+    mpz_set_d(p,134);
+    mpz_nextprime(p,p);
     
 //     message à crypter 
-    mpz_t m;
+    mpz_t m,mtmp,m1,m2;
     
     mpz_init(m);
-    mpz_set_d(m,16);
-    mpz_mod(m,m,p);
+    mpz_init(mtmp);
+    mpz_init(m1);
+    mpz_init(m2);
+    mpz_set_d(m1,54);
+    mpz_set_d(m2,61);
     
-    mpz_t C,B,x,X;
-    mpz_init(C);mpz_init(B);mpz_init(x);mpz_init(X);
+    mpz_mod(m1,m1,p);
+    mpz_mod(m2,m2,p);
     
+    mpz_t C,C1,C2,B,B1,B2,x,X;
+    mpz_init(C);mpz_init(B);mpz_init(C1);mpz_init(B1);mpz_init(C2);mpz_init(B2);mpz_init(x);mpz_init(X);
+    
+//     Génération de la clé
     keyGen(p, g, x, X) ;
-    gmp_printf("Clé secrète :\n    x = %Zd\nClé publique :\n   p = %Zd\n   g = %Zd\n   X = %Zd\n",x,p,g,X); 
-    encrypt(C, B, p, g, X, m) ;
-    gmp_printf("    m = %Zd\n   C = %Zd\n   B = %Zd\n",m,C,B);
-    decrypt(C, B, x, m, p) ;
-    gmp_printf("    m = %Zd\n",m);
+//     encryp des deux messages
+    encrypt(C1, B1, p, g, X, m1);
+    encrypt(C2, B2, p, g, X, m2);
     
-    mpz_clear(m);mpz_clear(k);mpz_clear(un);mpz_clear(b);mpz_clear(c);mpz_clear(d);mpz_clear(q);mpz_clear(deux);mpz_clear(truc);mpz_clear(cent);mpz_clear(C);mpz_clear(B);mpz_clear(x);mpz_clear(X);
+//     multiplication des chiffrés
+    mpz_mul(C,C1,C2);
+    mpz_mod(C,C,p);
+    mpz_mul(B,B1,B2);
+    mpz_mod(B,B,p);
+//     decrypt du couple (C,B)
+    decrypt(C, B, x, m, p);
     
     
+//     Vérification m = m1*m2 ?
+    mpz_mul(mtmp,m1,m2);
+    mpz_mod(mtmp,mtmp,p);
+    
+//     Si m = mtmp
+    if (mpz_cmp(m,mtmp)==0)
+        gmp_printf("Propriété montrée pour m = %Zd! \n",m);
+    
+    
+//                  Question 5    
+//     keyGen(p, g, x, X) ;
+//     gmp_printf("Clé secrète :\n    x = %Zd\nClé publique :\n   p = %Zd\n   g = %Zd\n   X = %Zd\n",x,p,g,X); 
+//     encrypt(C, B, p, g, X, m) ;
+//     gmp_printf("   m = %Zd\n   C = %Zd\n   B = %Zd\n",m,C,B);
+//     decrypt(C, B, x, m, p) ;
+//     gmp_printf("    m = %Zd\n",m);
+    
+    mpz_clear(m);mpz_clear(mtmp);mpz_clear(m1);mpz_clear(m2);mpz_clear(k);mpz_clear(un);mpz_clear(b);mpz_clear(c);mpz_clear(d);mpz_clear(q);mpz_clear(deux);mpz_clear(truc);mpz_clear(cent);mpz_clear(C);mpz_clear(B);mpz_clear(C1);mpz_clear(B1);mpz_clear(C2);mpz_clear(B2);mpz_clear(x);mpz_clear(X);
+    
+//                     Questions 3 et 4
 // //     initialisation pour l'aléatore
 //     gmp_randstate_t state;
 //     gmp_randinit_default (state);
