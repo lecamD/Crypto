@@ -1,17 +1,16 @@
 # ProjetCrypto
 
 
-Question 1 :
-    Langage ? C
-    Bibliothèque : GMP
-    Opération : +,-,*,/
-    
-Question 2 :
-    ??
-    
+Installation de Sodium :
+
+Une fois dans le dossier libsodium-stable
+
+./configure
+make && make check
+sudo make install
+
+Compilation :
+
+gcc -o elgamal elGamal.c -lgmp -lsodium
 
 
-
-A l'air de fonctionner sur le petits nombres.
-Trop de mémoire utilisées pour les grands nombre.
-Aléatoire utilisé n'est pas correct ...

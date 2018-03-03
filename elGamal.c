@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "gmp.h"
+#include "sodium.h"
+
 
 /* Introduction à la cryptographie
  * Devoir Maison
@@ -171,7 +173,9 @@ void keyGen(mpz_t p, mpz_t g, mpz_t x, mpz_t X, gmp_randstate_t state) {
 //     gmp_randseed_ui (state, (unsigned) time(NULL));
 //     Tire au hasard un x entre 0 et p-2
     mpz_sub(k,p,un);
-    mpz_urandomm(x,state,k);
+
+	mpz_set_d(x,randombytes_uniform(k+1));
+    // mpz_urandomm(x,state,k);
 //     Calcul X = g^x mod p
     expMod(X, p, g, x);
 }
@@ -191,8 +195,9 @@ void encrypt(mpz_t C, mpz_t B, mpz_t p, mpz_t g, mpz_t X, mpz_t m,mpz_t r,gmp_ra
     
 //     Tire au hasard un nombre r entre 0 et p-2
     mpz_sub(k,p,un);
-    mpz_urandomm(r,state,k);
-    mpz_urandomm(r,state,k);
+    mpz_set_d(r,randombytes_uniform(k));
+//    mpz_urandomm(r,state,k);
+//    mpz_urandomm(r,state,k);
 //     gmp_printf("    r = %Zd\n",r);
 //     Calcul y = X^r mod p
     expMod(y, p, X, r);
@@ -228,7 +233,7 @@ void decrypt(mpz_t C, mpz_t B,mpz_t x,mpz_t m, mpz_t p) {
 
 int main( int argc, char ** argv ) {
     gmp_randstate_t state;
-    gmp_randinit_default(state);
+    gmp_randinit_mt(state);
     gmp_randseed_ui (state, (unsigned) time(NULL));
     FILE * fp;
     fp = fopen ("test.txt", "w+");
@@ -288,7 +293,8 @@ int main( int argc, char ** argv ) {
     gmp_printf("Partie tests sur Euclide en cours\n");
     gmp_fprintf(fp,"Euclide\n\n");
     for (i=0;i<5;i++) {
-        mpz_urandomm(a,state,p);
+    	mpz_set_d(a,randombytes_uniform(p));
+        //mpz_urandomm(a,state,p);
         euclide(a,p,u,v);
         gmp_fprintf(fp,"essaie %d\n    a = %Zd\n    u = %Zd\n    v = %Zd\n\n",i,a,u,v);
     }
@@ -301,7 +307,8 @@ int main( int argc, char ** argv ) {
     mpz_init(A);
     gmp_fprintf(fp,"Exponentiation modulaire\n\n");
     for (i=0;i<5;i++) {
-        mpz_urandomm(a,state,p);
+    	mpz_set_d(a,randombytes_uniform(p));
+        //mpz_urandomm(a,state,p);
         expMod(A,p,g,a);
         gmp_fprintf(fp,"essaie %d\n    a = %Zd\n    A = %Zd\n\n",i,a,A);
     }
