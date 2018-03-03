@@ -3,6 +3,12 @@
 #include <string.h>
 #include "gmp.h"
 
+/* Introduction à la cryptographie
+ * Devoir Maison
+ * Implémentation d'El Gamal
+ * DECANTER Paul	LE CAM Doriane
+*/
+
 // La fonction euclide prend en paramètre a et p et renvoie u et v de façon à ce que a*u + p*v = 1
 void euclide(mpz_t a, mpz_t p, mpz_t u, mpz_t v) {
     // déclaration de variables 
