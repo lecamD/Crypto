@@ -3,7 +3,6 @@
 #include <string.h>
 #include "gmp.h"
 
-
 // La fonction euclide prend en paramètre a et p et renvoie u et v de façon à ce que a*u + p*v = 1
 void euclide(mpz_t a, mpz_t p, mpz_t u, mpz_t v) {
     // déclaration de variables 
@@ -155,16 +154,15 @@ void expMod(mpz_t res,mpz_t p,mpz_t g,mpz_t a) {
 }
 
 
-void keyGen(mpz_t p, mpz_t g, mpz_t x, mpz_t X) {
-    printf("Génération de clé commencée\n");
+void keyGen(mpz_t p, mpz_t g, mpz_t x, mpz_t X, gmp_randstate_t state) {
     mpz_t un,k;
     mpz_init(un);
     mpz_init(k);
     mpz_set_d(un,1);
-//     initialisation pour l'aléatore
-    gmp_randstate_t state;
-    gmp_randinit_default (state);
-    gmp_randseed_ui (state, (unsigned) time(NULL));
+// //     initialisation pour l'aléatore
+//     gmp_randstate_t state;
+//     gmp_randinit_default (state);
+//     gmp_randseed_ui (state, (unsigned) time(NULL));
 //     Tire au hasard un x entre 0 et p-2
     mpz_sub(k,p,un);
     mpz_urandomm(x,state,k);
@@ -172,26 +170,24 @@ void keyGen(mpz_t p, mpz_t g, mpz_t x, mpz_t X) {
     expMod(X, p, g, x);
 }
 
-void encrypt(mpz_t C, mpz_t B, mpz_t p, mpz_t g, mpz_t X, mpz_t m) {
-    printf("encrypt commencé\n");
+void encrypt(mpz_t C, mpz_t B, mpz_t p, mpz_t g, mpz_t X, mpz_t m,mpz_t r,gmp_randstate_t state) {
     
-    mpz_t un,r,k,y;
+    mpz_t un,k,y;
     mpz_init(un);
     mpz_init(k);
-    mpz_init(r);
     mpz_init(y);
     mpz_set_d(un,1);
     
 //     initialisation pour l'aléatore
-    gmp_randstate_t state;
-    gmp_randinit_default (state);
-    gmp_randseed_ui (state, (unsigned) time(NULL));
+//     gmp_randstate_t state;
+//     gmp_randinit_default (state);
+//     gmp_randseed_ui (state, (unsigned) time(NULL));
     
 //     Tire au hasard un nombre r entre 0 et p-2
     mpz_sub(k,p,un);
     mpz_urandomm(r,state,k);
     mpz_urandomm(r,state,k);
-    gmp_printf("    r = %Zd\n",r);
+//     gmp_printf("    r = %Zd\n",r);
 //     Calcul y = X^r mod p
     expMod(y, p, X, r);
 //     gmp_printf("    y = %Zd\n",y);
@@ -205,7 +201,6 @@ void encrypt(mpz_t C, mpz_t B, mpz_t p, mpz_t g, mpz_t X, mpz_t m) {
 }
 
 void decrypt(mpz_t C, mpz_t B,mpz_t x,mpz_t m, mpz_t p) {
-    printf("decrypt commencé\n");
     mpz_t D,u,v,t;
     mpz_init(D);
     mpz_init(u);
@@ -226,6 +221,11 @@ void decrypt(mpz_t C, mpz_t B,mpz_t x,mpz_t m, mpz_t p) {
 
 
 int main( int argc, char ** argv ) {
+    gmp_randstate_t state;
+    gmp_randinit_default(state);
+    gmp_randseed_ui (state, (unsigned) time(NULL));
+    FILE * fp;
+    fp = fopen ("test.txt", "w+");
        
 //     initialisation de p = 2^1024 − 2^960 − 1 + 2^64 ∗ ([2^894 π] + 129093) et g = 2
     mpz_t k,b,c,d,p,q,un,g,deux,truc,cent;
@@ -258,6 +258,9 @@ int main( int argc, char ** argv ) {
     mpz_add(q,q,truc);
 //     (2^1024 − 2^960 − 1 + 2^64) ∗ ([2^894 π] + 129093)
     mpz_mul(p,p,q);
+    
+    
+    mpz_clear(k);mpz_clear(b);mpz_clear(c);mpz_clear(d);mpz_clear(q);mpz_clear(truc);mpz_clear(un);mpz_clear(deux);mpz_clear(cent);
 //     
 // //    p =  
 // // 74552348966919475999252352065578124041644418824828005444807371572971918118807129822843933514921654543589158889382724163333540486848544797300790583472480953829458644890488139850347078442895190178137605518160621347885987509079573008588779202218426541234334203658740434002771140502224523168013812274864773843243435524417268618512771558980788120310982900822695893919136238191653865219655852574475844837862711973004021255940937431491801716342376266668110205626780626493974387752884772478512132126093497864917801347061932974000514178185105720025718058922503179907990813359665487929030
@@ -269,91 +272,101 @@ int main( int argc, char ** argv ) {
 //     mpz_set_d(p,1344567754356789876);
     mpz_nextprime(p,p);
     
-//     message à crypter 
-    mpz_t m,mtmp,m1,m2;
+//     initialisation pour l'aléatore
     
-    mpz_init(m);
+//     Question 3 
+//     Test sur 5 valeur de a différentes pour Euclide()
+    mpz_t a,u,v;
+    mpz_init(a);mpz_init(u);mpz_init(v);
+    int i = 0;
+    gmp_printf("Partie tests sur Euclide en cours\n");
+    gmp_fprintf(fp,"Euclide\n\n");
+    for (i=0;i<5;i++) {
+        mpz_urandomm(a,state,p);
+        euclide(a,p,u,v);
+        gmp_fprintf(fp,"essaie %d\n    a = %Zd\n    u = %Zd\n    v = %Zd\n\n",i,a,u,v);
+    }
+    mpz_clear(u);mpz_clear(v);
+    
+//     Question 4
+//     Test sur 5 valeur de a différentes pour expMod()
+    gmp_printf("Partie tests sur Exponentiation modulaire en cours\n");
+    mpz_t A;
+    mpz_init(A);
+    gmp_fprintf(fp,"Exponentiation modulaire\n\n");
+    for (i=0;i<5;i++) {
+        mpz_urandomm(a,state,p);
+        expMod(A,p,g,a);
+        gmp_fprintf(fp,"essaie %d\n    a = %Zd\n    A = %Zd\n\n",i,a,A);
+    }
+    mpz_clear(A);
+    
+//     Question 5
+//     Test sur 5 valeur de m pour le chiffrement + dechriffrement
+    gmp_printf("Partie tests sur chiffrement + déchiffrement en cours\n");
+    mpz_t x,X,m,C,B,r;
+    mpz_init(x);mpz_init(X);mpz_init(m);mpz_init(C);mpz_init(B);mpz_init(r);
+    gmp_fprintf(fp,"chiffrement + déchiffrement\n");
+    for (i=0;i<5;i++) {
+        mpz_urandomb(m,state,50);
+        gmp_fprintf(fp,"essaie %d\n    m = %Zd\n\n",i,m);
+        
+        keyGen(p, g, x, X, state) ;
+//     gmp_printf("Clé secrète :\n    x = %Zd\nClé publique :\n   p = %Zd\n   g = %Zd\n   X = %Zd\n",x,p,g,X); 
+        encrypt(C, B, p, g, X, m, r,state) ;
+        gmp_fprintf(fp,"    r = %Zd\n\n",r);
+//     gmp_printf("   m = %Zd\n   C = %Zd\n   B = %Zd\n",m,C,B);
+        decrypt(C, B, x, m, p) ;
+//     gmp_printf("    m = %Zd\n",m);
+        gmp_fprintf(fp,"    m déchiffré = %Zd\n\n",m);
+    }
+    
+    
+// Question 6
+// Test sur 5 valeurs différentes pour les deux messages à chiffrés
+    gmp_printf("Partie tests sur Propriété homomorphique en cours\n");
+    gmp_fprintf(fp,"propriété homomorphique du chiffrement El Gamal\n");
+    mpz_t mtmp,m1,m2;
+    
     mpz_init(mtmp);
     mpz_init(m1);
-    mpz_init(m2);  
-    mpz_set_d(m1,8058981212);
-    mpz_set_d(m2,345284758);
+    mpz_init(m2);
     
-    mpz_mod(m1,m1,p);
-    mpz_mod(m2,m2,p);
+    mpz_t C1,C2,B1,B2;
+    mpz_init(C1);mpz_init(B1);mpz_init(C2);mpz_init(B2);
     
-    mpz_t C,C1,C2,B,B1,B2,x,X;
-    mpz_init(C);mpz_init(B);mpz_init(C1);mpz_init(B1);mpz_init(C2);mpz_init(B2);mpz_init(x);mpz_init(X);
-    
-//     Génération de la clé
-    keyGen(p, g, x, X) ;
-//     encryp des deux messages
-    encrypt(C1, B1, p, g, X, m1);
-    encrypt(C2, B2, p, g, X, m2);
-    
-//     multiplication des chiffrés
-    mpz_mul(C,C1,C2);
-    mpz_mod(C,C,p);
-    mpz_mul(B,B1,B2);
-    mpz_mod(B,B,p);
-//     decrypt du couple (C,B)
-    decrypt(C, B, x, m, p);
-    
-//     Vérification m = m1*m2 ?
-    mpz_mul(mtmp,m1,m2);
-    mpz_mod(mtmp,mtmp,p);
-    
-    gmp_printf("m1*m2 = %Zd\n",mtmp);
-//     Si m = mtmp
-    if (mpz_cmp(m,mtmp)==0)
-        gmp_printf("Propriété montrée pour m = %Zd \n",m);
-    
-    
-//                  Question 5    
-//     keyGen(p, g, x, X) ;
-//     gmp_printf("Clé secrète :\n    x = %Zd\nClé publique :\n   p = %Zd\n   g = %Zd\n   X = %Zd\n",x,p,g,X); 
-//     encrypt(C, B, p, g, X, m) ;
-//     gmp_printf("   m = %Zd\n   C = %Zd\n   B = %Zd\n",m,C,B);
-//     decrypt(C, B, x, m, p) ;
-//     gmp_printf("    m = %Zd\n",m);
-    
-    mpz_clear(m);mpz_clear(mtmp);mpz_clear(m1);mpz_clear(m2);mpz_clear(k);mpz_clear(un);mpz_clear(b);mpz_clear(c);mpz_clear(d);mpz_clear(q);mpz_clear(deux);mpz_clear(truc);mpz_clear(cent);mpz_clear(C);mpz_clear(B);mpz_clear(C1);mpz_clear(B1);mpz_clear(C2);mpz_clear(B2);mpz_clear(x);mpz_clear(X);
-    
-//                     Questions 3 et 4
-// //     initialisation pour l'aléatore
-//     gmp_randstate_t state;
-//     gmp_randinit_default (state);
-//     gmp_randseed_ui (state, (unsigned) time(NULL));
-//     
-// //     Test de la fonction euclide()
-//     mpz_t a,u,v;
-//     mpz_init(a);
-//     mpz_init(u);
-//     mpz_init(v);
-// //     Nombre aléatoire pour a entre 0 et p-2
-//     mpz_sub(k,p,un);
-//     mpz_urandomm(a,state,k);
-//     
-// //  exepmle de a   58385680693768810238380287528685100296233131714792073456850403050075397815897728818807088103404954059082733617986301435015160312304388214005626050530026332110186115316871324599019483054579210017428013995557864653757846361168929790664563254257160211361773389720914398534392184220441298211067009384562920135938629228327187303229555959482212725808962064222782349005218675070737360976503677616786764499608188388314645904364358562026122925888811055936754481145999452453860101746416282891831569700742557020597027813182997849854474665077804195029871000075428736954215122065809464607874
-//     
-// //     mpz_set_d(a,81);
-// //     mpz_set_d(p,11);
-//     euclide(a,p,u,v);
-//     gmp_printf("u = %Zd\nv = %Zd\n",u,v);
-//     
-// //     Test de la fonction expMod()
-//     mpz_t res;
-//     mpz_init(res);
-// //     Nombre aléatoire pour a   
-//     mpz_sub(k,p,un);
-//     mpz_urandomm(a,state,k);
-// //     mpz_set_d(pp,12349);
-// //     mpz_set_d(aa,34567);
-//     gmp_printf("\nOn a  : %Zd\n\n%Zd\n\n%Zd \n\n%Zd\n",g,a,res,p);
-//     expMod(res,p,g,a);
-//     gmp_printf("%Zd^%Zd = %Zd mod %Zd\n",g,a,res,p);
-//     
-//     
-// //     Libère la mémoire
-//     mpz_clear(a);mpz_clear(p);mpz_clear(u);mpz_clear(v);mpz_clear(res);mpz_clear(g);
+    for (i=0;i<5;i++) {
+        mpz_urandomb(m1,state,50);
+        mpz_urandomb(m2,state,50);
+        
+        mpz_mod(m1,m1,p);
+        mpz_mod(m2,m2,p);
+            
+    //     Génération de la clé
+        keyGen(p, g, x, X, state) ;
+    //     chiffrement des deux messages
+        encrypt(C1, B1, p, g, X, m1, r, state);
+        encrypt(C2, B2, p, g, X, m2, r, state);
+        
+    //     multiplication des chiffrés
+        mpz_mul(C,C1,C2);
+        mpz_mod(C,C,p);
+        mpz_mul(B,B1,B2);
+        mpz_mod(B,B,p);
+    //     déchiffrement du couple (C,B)
+        decrypt(C, B, x, m, p);
+        
+    //     Vérification m = m1*m2 ?
+        mpz_mul(mtmp,m1,m2);
+        mpz_mod(mtmp,mtmp,p);
+        
+        gmp_fprintf(fp,"Essaie %d\n    m1*m2 = %Zd\n    m déchiffré = %Zd\n\n",i,mtmp,m);
+        
+    //     Si m = mtmp ( Vérif de la propriété homomorphique d'ElGamal
+        if (mpz_cmp(m,mtmp)==0)
+            gmp_fprintf(fp,"Propriété montrée pour\n    m1 = %Zd\n    m2 = %Zd\n\n",m1,m2);
+    }
+    printf("Création d'un fichier test.txt avec les résultats des tests\n");
+    fclose(fp);
+    mpz_clear(r);mpz_clear(m);mpz_clear(mtmp);mpz_clear(m1);mpz_clear(m2);mpz_clear(C);mpz_clear(B);mpz_clear(C1);mpz_clear(B1);mpz_clear(C2);mpz_clear(B2);mpz_clear(x);mpz_clear(X);
 }
