@@ -162,41 +162,32 @@ void expMod(mpz_t res,mpz_t p,mpz_t g,mpz_t a) {
 }
 
 
-void keyGen(mpz_t p, mpz_t g, mpz_t x, mpz_t X, gmp_randstate_t state) {
+void keyGen(mpz_t p, mpz_t g, mpz_t x, mpz_t X/*, gmp_randstate_t state*/) {
     mpz_t un,k;
     mpz_init(un);
     mpz_init(k);
     mpz_set_d(un,1);
-// //     initialisation pour l'aléatore
-//     gmp_randstate_t state;
-//     gmp_randinit_default (state);
-//     gmp_randseed_ui (state, (unsigned) time(NULL));
+
 //     Tire au hasard un x entre 0 et p-2
     mpz_sub(k,p,un);
 
-	mpz_set_d(x,randombytes_uniform(k+1));
+    mpz_set_d(x,randombytes_uniform(k+1));
     // mpz_urandomm(x,state,k);
 //     Calcul X = g^x mod p
     expMod(X, p, g, x);
 }
 
-void encrypt(mpz_t C, mpz_t B, mpz_t p, mpz_t g, mpz_t X, mpz_t m,mpz_t r,gmp_randstate_t state) {
+void encrypt(mpz_t C, mpz_t B, mpz_t p, mpz_t g, mpz_t X, mpz_t m,mpz_t r/*,gmp_randstate_t state*/) {
     
     mpz_t un,k,y;
     mpz_init(un);
     mpz_init(k);
     mpz_init(y);
     mpz_set_d(un,1);
-    
-//     initialisation pour l'aléatore
-//     gmp_randstate_t state;
-//     gmp_randinit_default (state);
-//     gmp_randseed_ui (state, (unsigned) time(NULL));
-    
+        
 //     Tire au hasard un nombre r entre 0 et p-2
     mpz_sub(k,p,un);
     mpz_set_d(r,randombytes_uniform(k));
-//    mpz_urandomm(r,state,k);
 //    mpz_urandomm(r,state,k);
 //     gmp_printf("    r = %Zd\n",r);
 //     Calcul y = X^r mod p
@@ -232,6 +223,8 @@ void decrypt(mpz_t C, mpz_t B,mpz_t x,mpz_t m, mpz_t p) {
 
 
 int main( int argc, char ** argv ) {
+    
+//     initialisation de l'aléatoire pour les messages
     gmp_randstate_t state;
     gmp_randinit_mt(state);
     gmp_randseed_ui (state, (unsigned) time(NULL));
@@ -281,9 +274,10 @@ int main( int argc, char ** argv ) {
     
 //     p pour les tests
 //     mpz_set_d(p,1344567754356789876);
+    
+//     P n'est pas premier donc on prend le prochain premier
     mpz_nextprime(p,p);
     
-//     initialisation pour l'aléatore
     
 //     Question 3 
 //     Test sur 5 valeur de a différentes pour Euclide()
@@ -324,9 +318,9 @@ int main( int argc, char ** argv ) {
         mpz_urandomb(m,state,50);
         gmp_fprintf(fp,"essaie %d\n    m = %Zd\n\n",i,m);
         
-        keyGen(p, g, x, X, state) ;
+        keyGen(p, g, x, X) ;
 //     gmp_printf("Clé secrète :\n    x = %Zd\nClé publique :\n   p = %Zd\n   g = %Zd\n   X = %Zd\n",x,p,g,X); 
-        encrypt(C, B, p, g, X, m, r,state) ;
+        encrypt(C, B, p, g, X, m, r) ;
         gmp_fprintf(fp,"    r = %Zd\n\n",r);
 //     gmp_printf("   m = %Zd\n   C = %Zd\n   B = %Zd\n",m,C,B);
         decrypt(C, B, x, m, p) ;
@@ -356,10 +350,10 @@ int main( int argc, char ** argv ) {
         mpz_mod(m2,m2,p);
             
     //     Génération de la clé
-        keyGen(p, g, x, X, state) ;
+        keyGen(p, g, x, X) ;
     //     chiffrement des deux messages
-        encrypt(C1, B1, p, g, X, m1, r, state);
-        encrypt(C2, B2, p, g, X, m2, r, state);
+        encrypt(C1, B1, p, g, X, m1, r);
+        encrypt(C2, B2, p, g, X, m2, r);
         
     //     multiplication des chiffrés
         mpz_mul(C,C1,C2);
